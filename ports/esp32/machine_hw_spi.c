@@ -24,6 +24,8 @@
  * THE SOFTWARE.
  */
 
+#include "machine_hw_spi.h"
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -35,9 +37,6 @@
 #include "modmachine.h"
 
 #include "driver/spi_master.h"
-
-#define MP_HW_SPI_MAX_XFER_BYTES (4092)
-#define MP_HW_SPI_MAX_XFER_BITS (MP_HW_SPI_MAX_XFER_BYTES * 8) // Has to be an even multiple of 8
 
 typedef struct _machine_hw_spi_obj_t {
     mp_obj_base_t base;
@@ -403,3 +402,12 @@ const mp_obj_type_t machine_hw_spi_type = {
     .protocol = &machine_hw_spi_p,
     .locals_dict = (mp_obj_dict_t *) &mp_machine_spi_locals_dict,
 };
+
+const spi_device_handle_t spi_device_handle_from_mp_obj(mp_obj_t o) {
+    if (MP_OBJ_IS_TYPE(o, &machine_hw_spi_type)) {
+        machine_hw_spi_obj_t *self = o;
+        return self->spi;
+    } else {
+        mp_raise_TypeError("expected an spi object");
+    }
+}

@@ -71,6 +71,7 @@ INC += -I$(TOP)/lib/mp-readline
 INC += -I$(TOP)/lib/netutils
 INC += -I$(TOP)/lib/timeutils
 INC += -I$(BUILD)
+INC += -Ilibs
 
 INC_ESPCOMP += -I$(ESPCOMP)/bootloader_support/include
 INC_ESPCOMP += -I$(ESPCOMP)/bootloader_support/include_bootloader
@@ -111,6 +112,10 @@ INC_ESPCOMP += -I$(ESPCOMP)/app_trace/include
 INC_ESPCOMP += -I$(ESPCOMP)/app_update/include
 INC_ESPCOMP += -I$(ESPCOMP)/pthread/include
 INC_ESPCOMP += -I$(ESPCOMP)/smartconfig_ack/include
+INC_ESPCOMP += -I$(ESPCOMP)/esp_http_client/include
+INC_ESPCOMP += -I$(ESPCOMP)/esp_http_client/lib/include
+INC_ESPCOMP += -I$(ESPCOMP)/tcp_transport/include
+INC_ESPCOMP += -I$(ESPCOMP)/esp-tls
 
 # these flags are common to C and C++ compilation
 CFLAGS_COMMON = -Os -ffunction-sections -fdata-sections -fstrict-volatile-bitfields \
@@ -192,6 +197,7 @@ SRC_C = \
 	machine_wdt.c \
 	mpthreadport.c \
 	machine_rtc.c \
+	ST7735.c \
 	$(SRC_MOD)
 
 EXTMOD_SRC_C = $(addprefix extmod/,\
@@ -218,12 +224,18 @@ DRIVERS_SRC_C = $(addprefix drivers/,\
 	dht/dht.c \
 	)
 
+LIBS_SRC_C =
+LIBS_SRC_C += $(addprefix libs/esp_https_ota/,\
+	esp_https_ota.c \
+	)
+
 OBJ_MP =
 OBJ_MP += $(PY_O)
 OBJ_MP += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 OBJ_MP += $(addprefix $(BUILD)/, $(EXTMOD_SRC_C:.c=.o))
 OBJ_MP += $(addprefix $(BUILD)/, $(LIB_SRC_C:.c=.o))
 OBJ_MP += $(addprefix $(BUILD)/, $(DRIVERS_SRC_C:.c=.o))
+OBJ_MP += $(addprefix $(BUILD)/, $(LIBS_SRC_C:.c=.o))
 
 # List of sources for qstr extraction
 SRC_QSTR += $(SRC_C) $(EXTMOD_SRC_C) $(LIB_SRC_C) $(DRIVERS_SRC_C)
@@ -633,6 +645,7 @@ ESPIDF_MBEDTLS_O = $(addprefix $(ESPCOMP)/mbedtls/,\
 	port/esp_sha1.o \
 	port/esp_sha256.o \
 	port/esp_sha512.o \
+	port/net_sockets.o \
 	)
 
 $(BUILD)/$(ESPCOMP)/wpa_supplicant/%.o: CFLAGS += -DEMBEDDED_SUPP -DIEEE8021X_EAPOL -DEAP_PEER_METHOD -DEAP_MSCHAPv2 -DEAP_TTLS -DEAP_TLS -DEAP_PEAP -DUSE_WPA2_TASK -DCONFIG_WPS2 -DCONFIG_WPS_PIN -DUSE_WPS_TASK -DESPRESSIF_USE -DESP32_WORKAROUND -D__ets__ -Wno-strict-aliasing
@@ -665,6 +678,32 @@ ESPIDF_WPA_SUPPLICANT_O = $(addprefix $(ESPCOMP)/wpa_supplicant/,\
 	port/os_xtensa.o \
 	)
 
+ESPIDF_ESP_TLS_O = $(addprefix $(ESPCOMP)/esp-tls/,\
+	esp_tls.o \
+	)
+
+ESPIDF_TCP_TRANSPORT_O = $(addprefix $(ESPCOMP)/tcp_transport/,\
+	transport.o \
+	transport_ssl.o \
+	transport_tcp.o \
+	transport_ws.o \
+	transport_utils.o \
+	)
+
+ESPIDF_HTTP_CLIENT_O = $(addprefix $(ESPCOMP)/esp_http_client/,\
+	esp_http_client.o \
+	lib/http_auth.o \
+	lib/http_header.o \
+	lib/http_utils.o \
+	)
+
+ESPIDF_BOOTLOADER_SUPPORT_O = $(addprefix $(ESPCOMP)/bootloader_support/,\
+	src/esp_image_format.o \
+	src/bootloader_common.o \
+	src/bootloader_flash.o \
+	src/bootloader_sha.o \
+	)
+
 OBJ_ESPIDF =
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_NEWLIB_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_DRIVER_O))
@@ -693,6 +732,10 @@ OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_SMARTCONFIG_ACK_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_SPI_FLASH_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_ULP_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_WPA_SUPPLICANT_O))
+OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_ESP_TLS_O))
+OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_TCP_TRANSPORT_O))
+OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_HTTP_CLIENT_O))
+OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_BOOTLOADER_SUPPORT_O))
 
 $(OBJ_ESPIDF): $(SDKCONFIG_H)
 
@@ -723,6 +766,10 @@ LIB_ESPIDF += ulp
 LIB_ESPIDF += lwip
 LIB_ESPIDF += mbedtls
 LIB_ESPIDF += wpa_supplicant
+LIB_ESPIDF += esp-tls
+LIB_ESPIDF += tcp_transport
+LIB_ESPIDF += http_client
+LIB_ESPIDF += bootloader_support
 
 BUILD_ESPIDF_LIB = $(BUILD)/esp-idf
 
@@ -763,6 +810,10 @@ $(eval $(call gen_espidf_lib_rule,ulp,$(ESPIDF_ULP_O)))
 $(eval $(call gen_espidf_lib_rule,lwip,$(ESPIDF_LWIP_O)))
 $(eval $(call gen_espidf_lib_rule,mbedtls,$(ESPIDF_MBEDTLS_O)))
 $(eval $(call gen_espidf_lib_rule,wpa_supplicant,$(ESPIDF_WPA_SUPPLICANT_O)))
+$(eval $(call gen_espidf_lib_rule,esp-tls,$(ESPIDF_ESP_TLS_O)))
+$(eval $(call gen_espidf_lib_rule,tcp_transport,$(ESPIDF_TCP_TRANSPORT_O)))
+$(eval $(call gen_espidf_lib_rule,http_client,$(ESPIDF_HTTP_CLIENT_O)))
+$(eval $(call gen_espidf_lib_rule,bootloader_support,$(ESPIDF_BOOTLOADER_SUPPORT_O)))
 
 LIB = $(foreach lib,$(LIB_ESPIDF),$(BUILD_ESPIDF_LIB)/$(lib)/lib$(lib).a)
 

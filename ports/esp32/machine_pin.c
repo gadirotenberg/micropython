@@ -26,6 +26,8 @@
  * THE SOFTWARE.
  */
 
+#include "machine_pin.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -41,11 +43,6 @@
 
 // Used to implement gpio_hold_en() functionality; value should be distinct from all IDF pull modes
 #define GPIO_PULLHOLD (8)
-
-typedef struct _machine_pin_obj_t {
-    mp_obj_base_t base;
-    gpio_num_t id;
-} machine_pin_obj_t;
 
 typedef struct _machine_pin_irq_obj_t {
     mp_obj_base_t base;
