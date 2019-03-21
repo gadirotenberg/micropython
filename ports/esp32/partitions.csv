@@ -6,4 +6,6 @@ phy_init, data, phy,     0xf000,  0x1000,
 factory,  app,  factory, 0x10000, 0x180000,
 ota_0,    app,  ota_0,   ,        0x180000,
 ota_1,    app,  ota_1,   ,        0x180000,
-vfs,      data, fat,     ,        0x100000,
+vfs,      data, fat,     ,        0x900000,
+# total_size: 0x1000000
+# vfs size = total_size - 0x180000*3 - 0x10000 - extra buffer = 0x900000
