@@ -197,6 +197,7 @@ SRC_C = \
 	machine_wdt.c \
 	mpthreadport.c \
 	machine_rtc.c \
+	modsmartconfig.c \
 	ST7735.c \
 	$(SRC_MOD)
 
